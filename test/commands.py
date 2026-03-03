@@ -1,3 +1,3 @@
 import subprocess
-result = subprocess.run(["cmd", "/c", "dir"])
-print(result.stdout) 
+result = subprocess.run(['arp', '-a'] , capture_output= True, text=True)
+print(result.stdout)
