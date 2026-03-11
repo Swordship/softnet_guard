@@ -12,5 +12,6 @@ packets_recived  integer not null,
 bytes_sent integer not null,
 bytes_recived integer not null,
 destination_ip text null,
+protocol text not null,
 port integer null
 );
