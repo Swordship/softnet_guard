@@ -29,9 +29,4 @@ def initialize_db():
     finally:
         conn.close()
 if __name__ == "__main__":
-    conn = get_connection()
-    if conn:
-        print("Database connection successful.")
-        conn.close()
-    else:
-        print("Database connection failed.")
+    initialize_db()
