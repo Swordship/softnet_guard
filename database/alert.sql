@@ -13,7 +13,6 @@
 -- severity text not null CHECK(severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
 -- acknowledged integer not null 
 -- );
-alerts (alert.sql)
 CREATE TABLE IF NOT EXISTS alerts (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 occurred_at TEXT NOT NULL,
@@ -24,6 +23,6 @@ severity TEXT NOT NULL DEFAULT 'LOW' CHECK(severity IN ('LOW','MEDIUM','HIGH','C
 acknowledged INTEGER NOT NULL DEFAULT 0 CHECK(acknowledged IN (0,1)),
 created_at TEXT NOT NULL DEFAULT (datetime('now')),
 updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE SET CASCADE
+FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_alerts_device ON alerts(device_id);
