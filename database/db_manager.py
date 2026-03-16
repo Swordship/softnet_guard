@@ -101,8 +101,4 @@ def mark_inactive_devices(scanned_macs: list):
     finally:
         conn.close()
 if __name__ == "__main__":
-    # initialize_db()
-    # insert_device("192.168.1.100", "00:11:22:33:44:55", "Test Device", "apple", "Unknown")
-    # devices = get_all_devices()
-    # print(devices)
-    mark_inactive_devices(["00:11:22:33:44:56", "00:11:22:33:44:57"])
+    initialize_db()
