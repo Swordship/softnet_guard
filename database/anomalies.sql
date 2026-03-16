@@ -4,7 +4,7 @@
 -- including timestamps, device IP addresses, anomaly types,
 -- anomaly scores, descriptions, severity levels, and resolution status.
 CREATE table if not exists anomailes (
-ID integer PRIMARY KEY AUTOINCREMENT,
+id integer PRIMARY KEY AUTOINCREMENT,
 timestamp text not null,
 device_ip text not null,
 anomaly_type text not null ,

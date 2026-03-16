@@ -5,7 +5,7 @@
 -- query types, and responses received. This information can be
 -- useful for monitoring and analyzing DNS traffic for potential security threats or anomalies.
 CREATE table if not exists dns_queries (
-ID integer PRIMARY KEY AUTOINCREMENT,
+id integer PRIMARY KEY AUTOINCREMENT,
 timestamp text not null,
 device_ip text not null,
 domain text not null,

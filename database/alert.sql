@@ -4,12 +4,26 @@
 -- timestamps, device IP addresses, alert types, messages,
 -- severity levels, and acknowledgment status. The alert types
 -- are categorized as 'NEW_DEVICE', 'ANOMALY', and 'MALICIOUS_URL'.
-CREATE table if not exists alert (
-ID integer PRIMARY KEY AUTOINCREMENT,
-timestamp text not null,
-device_ip text not null,
-alert_type text CHECK(alert_type IN ('NEW_DEVICE', 'ANOMALY', 'MALICIOUS_URL')),
-message text not null,
-severity text not null CHECK(severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
-acknowledged integer not null 
+-- CREATE table if not exists alert (
+-- ID integer PRIMARY KEY AUTOINCREMENT,
+-- timestamp text not null,
+-- device_ip text not null,
+-- alert_type text CHECK(alert_type IN ('NEW_DEVICE', 'ANOMALY', 'MALICIOUS_URL')),
+-- message text not null,
+-- severity text not null CHECK(severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+-- acknowledged integer not null 
+-- );
+CREATE TABLE IF NOT EXISTS devices (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+ip_address TEXT NOT NULL,
+mac_address TEXT NOT NULL UNIQUE,
+device_type TEXT,
+host_name TEXT,
+vendor TEXT,
+first_seen TEXT NOT NULL, -- ISO8601
+last_seen TEXT NOT NULL, -- ISO8601
+status TEXT NOT NULL DEFAULT 'UNKNOWN',
+is_authorized INTEGER NOT NULL DEFAULT 0 CHECK(is_authorized IN (0,1)),
+created_at TEXT NOT NULL DEFAULT (datetime('now')),
+updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
