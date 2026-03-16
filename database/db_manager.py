@@ -66,6 +66,22 @@ def get_all_devices():
         return []
     finally:
         conn.close()
+def update_device_status(mac_address, status):
+    conn = get_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE devices SET status = ? WHERE mac_address = ?
+        """, (status, mac_address))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to update device status: {e}")
+        return False
+    finally:
+        conn.close()
 if __name__ == "__main__":
     # initialize_db()
     insert_device("192.168.1.100", "00:11:22:33:44:55", "Test Device", "apple", "Unknown")
