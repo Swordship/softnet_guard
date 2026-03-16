@@ -82,8 +82,27 @@ def update_device_status(mac_address, status):
         return False
     finally:
         conn.close()
+def mark_inactive_devices(scanned_macs: list):
+    if not scanned_macs:
+        return False
+    conn = get_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE devices SET status = 'inactive' WHERE mac_address NOT IN ({})
+        """.format(','.join('?' for _ in scanned_macs)), scanned_macs)
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to mark inactive devices: {e}")
+        return False
+    finally:
+        conn.close()
 if __name__ == "__main__":
     # initialize_db()
-    insert_device("192.168.1.100", "00:11:22:33:44:55", "Test Device", "apple", "Unknown")
-    devices = get_all_devices()
-    print(devices)
+    # insert_device("192.168.1.100", "00:11:22:33:44:55", "Test Device", "apple", "Unknown")
+    # devices = get_all_devices()
+    # print(devices)
+    mark_inactive_devices(["00:11:22:33:44:56", "00:11:22:33:44:57"])
