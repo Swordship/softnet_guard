@@ -1,7 +1,6 @@
-import datetime
 import sqlite3
 import os
-from time import timezone
+from datetime import datetime, timezone
 DB_PATH = "softnet_guard.db"
 
 def get_connection():
@@ -53,5 +52,22 @@ def insert_device(ip_address, mac_address, host_name=None, vendor=None, device_t
         return False
     finally:
         conn.close()
+def get_all_devices():
+    conn = get_connection()
+    if not conn:
+        return []
+    conn.row_factory = sqlite3.Row
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM devices")
+        return [dict(row) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to fetch devices: {e}")
+        return []
+    finally:
+        conn.close()
 if __name__ == "__main__":
-    initialize_db()
+    # initialize_db()
+    insert_device("192.168.1.100", "00:11:22:33:44:55", "Test Device", "apple", "Unknown")
+    devices = get_all_devices()
+    print(devices)
