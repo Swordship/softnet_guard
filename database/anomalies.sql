@@ -26,3 +26,5 @@ created_at TEXT NOT NULL DEFAULT (datetime('now')),
 updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_anomalies_device ON anomalies(device_id);
+CREATE INDEX IF NOT EXISTS idx_anomalies_occurred_at ON anomalies(occurred_at);
