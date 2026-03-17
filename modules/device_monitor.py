@@ -45,9 +45,11 @@ def scapy_scan():
     for dev in devices:
         print(f"  {dev['ip']} → {dev['mac']}")
     return devices
-
+def scan_network():
+    print("Starting ARP scan...")
+    arp_results = arp_scan()
+    print("\nStarting Scapy scan...")
+    scapy_results = scapy_scan()
+    return arp_results, scapy_results
 if __name__ == "__main__":
-    print("ARP Scan Results:")
-    print(arp_scan())
-    print("\nScapy Scan Results:")
-    scapy_scan()
+    scan_network()
