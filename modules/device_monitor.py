@@ -1,4 +1,5 @@
 import subprocess
+import socket
 def scan ():
     try:
         result = subprocess.run(['arp', '-a'] , capture_output= True, text=True)
@@ -10,7 +11,11 @@ def scan ():
     for line in lines:
         if 'dynamic' in line:
             ip, mac = line.split()[:2]
-            output.append({"ip": ip, "mac": mac})
+            try:
+                hostname = socket.gethostbyaddr(ip)[0]
+            except socket.herror as e:
+                hostname = "Unknown"
+            output.append({"ip": ip, "mac": mac, "hostname": hostname})
     return output
 if __name__ == "__main__":
     print(scan())
