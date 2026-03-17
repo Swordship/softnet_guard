@@ -1,6 +1,6 @@
 import subprocess
 import socket
-def scan ():
+def arp_scan ():
     try:
         result = subprocess.run(['arp', '-a'] , capture_output= True, text=True)
         lines = result.stdout.splitlines()
@@ -18,4 +18,4 @@ def scan ():
             output.append({"ip": ip, "mac": mac, "hostname": hostname})
     return output
 if __name__ == "__main__":
-    print(scan())
+    print(arp_scan())
