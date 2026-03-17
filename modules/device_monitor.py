@@ -1,5 +1,7 @@
 import subprocess
 import socket
+from scapy.all import ARP, Ether, srp, conf
+import ipaddress
 def arp_scan ():
     try:
         result = subprocess.run(['arp', '-a'] , capture_output= True, text=True)
@@ -17,5 +19,35 @@ def arp_scan ():
                 hostname = "Unknown"
             output.append({"ip": ip, "mac": mac, "hostname": hostname})
     return output
+
+def scapy_scan():
+    # Auto-detect local network
+    local_ip = conf.route.route("0.0.0.0")[1]
+    netmask = conf.route.route("0.0.0.0")[3]
+    # Convert netmask to prefix length
+    prefix = ipaddress.IPv4Network(f"0.0.0.0/{netmask}").prefixlen
+    network = ipaddress.IPv4Network(f"{local_ip}/{prefix}", strict=False)
+
+    print(f"Scanning network: {network}")
+
+    # ARP scan
+    arp = ARP(pdst=str(network))
+    ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+    packet = ether / arp
+
+    result = srp(packet, timeout=2, verbose=0)[0]
+
+    devices = []
+    for sent, received in result:
+        devices.append({'ip': received.psrc, 'mac': received.hwsrc})
+
+    print("Active devices:")
+    for dev in devices:
+        print(f"  {dev['ip']} → {dev['mac']}")
+    return devices
+
 if __name__ == "__main__":
+    print("ARP Scan Results:")
     print(arp_scan())
+    print("\nScapy Scan Results:")
+    scapy_scan()
