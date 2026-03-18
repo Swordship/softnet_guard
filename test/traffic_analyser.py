@@ -3,8 +3,6 @@
 # # print(psutil.net_connections(kind='inet')[:3])
 # interfaces = psutil.net_if_addrs()
 # print(interfaces)
-import ipaddress
-
 import psutil
 from socket import AF_INET
 import ipaddress
