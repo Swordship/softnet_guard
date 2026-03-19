@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from database import db_manager
 import subprocess
 import socket
 from scapy.all import ARP, Ether, srp, conf
@@ -66,12 +70,22 @@ def scan_network():
     # ---------Try Scapy scan first, if it fails , fall back to ARP scan -----------------
     try:
         print("\nStarting Scapy scan...")
-        scapy_results = scapy_scan()
-        return scapy_results
+        devices = scapy_scan()
     except :
         print("Scapy scan failed, falling back to ARP scan...")
-        arp_results = arp_scan()
-        return arp_results
+        devices = arp_scan()
+    scanned_macs = []
+    for device in devices:
+        db_manager.insert_device(
+            ip_address=device['ip'],
+            mac_address=device['mac'],
+            host_name=device['hostname'],
+            vendor="Unknown",
+            device_type="Unknown"
+        )
+        scanned_macs.append(device['mac'])
+    db_manager.mark_inactive_devices(scanned_macs)
+    return devices
 
 def get_local_network():
     for name, addrs in psutil.net_if_addrs().items():
