@@ -91,12 +91,12 @@ def mark_inactive_devices(scanned_macs: list):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            UPDATE devices SET status = 'inactive' WHERE mac_address NOT IN ({})
+            UPDATE devices SET status = 'Inactive' WHERE mac_address NOT IN ({})
         """.format(','.join('?' for _ in scanned_macs)), scanned_macs)
         conn.commit()
         return True
     except sqlite3.Error as e:
-        print(f"[DB ERROR] Failed to mark inactive devices: {e}")
+        print(f"[DB ERROR] Failed to mark Inactive devices: {e}")
         return False
     finally:
         conn.close()

@@ -25,7 +25,7 @@ host_name TEXT,
 vendor TEXT,
 first_seen TEXT NOT NULL, -- ISO8601
 last_seen TEXT NOT NULL, -- ISO8601
-status TEXT NOT NULL DEFAULT 'UNKNOWN',
+status TEXT NOT NULL DEFAULT 'Active' CHECK(status IN ('Active', 'Inactive', 'Unknown')),
 is_authorized INTEGER NOT NULL DEFAULT 0 CHECK(is_authorized IN (0,1)),
 created_at TEXT NOT NULL DEFAULT (datetime('now')),
 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
