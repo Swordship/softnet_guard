@@ -1,5 +1,7 @@
 import sys
 import os
+import time
+import requests
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from database import db_manager
 import subprocess
@@ -76,11 +78,13 @@ def scan_network():
         devices = arp_scan()
     scanned_macs = []
     for device in devices:
+        vendor = get_vendor(device['mac'])
+        time.sleep(1)  # To avoid hitting API rate limits
         db_manager.insert_device(
             ip_address=device['ip'],
             mac_address=device['mac'],
             host_name=device['hostname'],
-            vendor="Unknown",
+            vendor=vendor,
             device_type="Unknown"
         )
         scanned_macs.append(device['mac'])
@@ -99,5 +103,14 @@ def get_local_network():
                 network = ipaddress.IPv4Interface(f"{ip}/{addr.netmask}").network
                 return str(network)
     return None  # is not found , return none here 
+def get_vendor(mac_address: str) -> str:
+    try:
+        mac_prefix = mac_address[:8]
+        response = requests.get(f"https://api.macvendors.com/{mac_prefix}")
+        if response.status_code == 200:
+            return response.text  # ← return not print!
+        return "Unknown"
+    except requests.RequestException:
+        return "request error"
 if __name__ == "__main__":
     scan_network()
