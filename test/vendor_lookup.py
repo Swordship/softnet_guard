@@ -1,5 +1,4 @@
 import requests
-import time
 def get_vendor(mac_address: str) -> str:
     try:
         mac_prefix = mac_address[:8]
