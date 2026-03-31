@@ -2,3 +2,5 @@
 /modules/__pycache__
 /database/__pycache__
 *.db
+/test/__pycache__
+/database/__pycache__
