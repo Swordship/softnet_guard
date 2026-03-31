@@ -100,5 +100,41 @@ def mark_inactive_devices(scanned_macs: list):
         return False
     finally:
         conn.close()
+def log_traffic(ip, bytes_sent, bytes_received, packet_count, protocol, dest_ip=None):
+    conn = get_connection()
+    if not conn:
+        return False
+    current_time = datetime.now(timezone.utc).isoformat()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO traffic_stats (device_id, bytes_sent, bytes_received, packet_count, protocol, destination_ip, observed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (ip, bytes_sent, bytes_received, packet_count, protocol, dest_ip, current_time))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to log traffic: {e}")
+        return False
+    finally:
+        conn.close()
+def log_dns(source_ip, domain):
+    conn = get_connection()
+    if not conn:
+        return False
+    current_time = datetime.now(timezone.utc).isoformat()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO dns_queries(device_id, domain, queried_at)
+            VALUES (?, ?, ?)
+        """, (source_ip, domain, current_time))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to log DNS query: {e}")
+        return False
+    finally:
+        conn.close()
 if __name__ == "__main__":
     initialize_db()
