@@ -104,13 +104,16 @@ def log_traffic(ip, bytes_sent, bytes_received, packet_count, protocol, dest_ip=
     conn = get_connection()
     if not conn:
         return False
+    device_id = get_device_id_by_ip(ip)
+    if not device_id:
+        return False  # device not in DB yet, skip
     current_time = datetime.now(timezone.utc).isoformat()
     try:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO traffic_stats (device_id, bytes_sent, bytes_received, packet_count, protocol, destination_ip, observed_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (ip, bytes_sent, bytes_received, packet_count, protocol, dest_ip, current_time))
+        """, (device_id, bytes_sent, bytes_received, packet_count, protocol, dest_ip, current_time))
         conn.commit()
         return True
     except sqlite3.Error as e:
@@ -118,22 +121,40 @@ def log_traffic(ip, bytes_sent, bytes_received, packet_count, protocol, dest_ip=
         return False
     finally:
         conn.close()
-def log_dns(source_ip, domain):
+def log_dns(ip, domain):
     conn = get_connection()
     if not conn:
         return False
+    device_id = get_device_id_by_ip(ip)
+    if not device_id:
+        return False  # device not in DB yet, skip
     current_time = datetime.now(timezone.utc).isoformat()
     try:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO dns_queries(device_id, domain, queried_at)
             VALUES (?, ?, ?)
-        """, (source_ip, domain, current_time))
+        """, (device_id, domain, current_time))
         conn.commit()
         return True
     except sqlite3.Error as e:
         print(f"[DB ERROR] Failed to log DNS query: {e}")
         return False
+    finally:
+        conn.close()
+def get_device_id_by_ip(ip_address):
+    conn = get_connection()
+    if not conn:
+        return None
+    conn.row_factory = sqlite3.Row
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM devices WHERE ip_address = ?", (ip_address,))
+        row = cursor.fetchone()
+        return row["id"] if row else None
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to get device id: {e}")
+        return None
     finally:
         conn.close()
 if __name__ == "__main__":

@@ -99,6 +99,8 @@ def get_local_network():
                 # Skip APIPA and loopback addresses
                 if ip.startswith("169.254.") or ip == "127.0.0.1":
                     continue
+                if ip.startswith("169.254.") or ip == "127.0.0.1" or ip.startswith("192.168.10."):
+                    continue
                 # Return the first valid interface found
                 network = ipaddress.IPv4Interface(f"{ip}/{addr.netmask}").network
                 return str(network)
