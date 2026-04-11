@@ -93,7 +93,64 @@ def get_severity(score):
     if score >= 0.50: return "MEDIUM"
     if score >= 0.35: return "LOW"
     return "NORMAL"
+def run_detection_once():
+    """Score all devices from recent traffic and create alerts if anomalous."""
+    model, scaler = load_model()
+    
+    conn = db_manager.get_connection()
+    if not conn:
+        return
+    conn.row_factory = __import__('sqlite3').Row
+    cursor = conn.cursor()
+    
+    # Get traffic data per device from last 60 minutes
+    cursor.execute("""
+        SELECT device_id,
+               SUM(packet_count)   as packet_count,
+               SUM(bytes_sent)     as bytes_sent,
+               SUM(bytes_received) as bytes_received,
+               COUNT(DISTINCT destination_ip) as unique_destinations
+        FROM traffic_stats
+        WHERE observed_at >= datetime('now', '-60 minutes')
+        GROUP BY device_id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
 
+    if not rows:
+        print("[Detector] No traffic data yet.")
+        return
+
+    for row in rows:
+        # Build 13-feature vector
+        bs   = float(row["bytes_sent"] or 0)
+        br   = float(row["bytes_received"] or 0)
+        pc   = float(row["packet_count"] or 1)
+        bt   = bs + br
+        bpp  = bt / pc
+        srr  = bs / (bt + 1)
+
+        vector = [
+            pc, bs, br, bt, bpp, srr,
+            1.0, float(row["unique_destinations"] or 1),
+            0, 0.0, 0.65, 0.08, 0
+        ]
+
+        score    = score_vector(vector, model, scaler)
+        severity = get_severity(score)
+
+        print(f"[Detector] device_id={row['device_id']} score={score:.3f} → {severity}")
+
+        if severity in ("MEDIUM", "HIGH", "CRITICAL"):
+            anomaly_type = classify_anomaly(vector)
+            msg = f"Anomaly detected: {anomaly_type} (score={score:.2f})"
+            db_manager.create_alert(
+                alert_type = anomaly_type,
+                severity   = severity,
+                device_id  = row["device_id"],
+                message    = msg
+            )
+            print(f"  [ALERT] {msg}")
 if __name__ == "__main__":
     train_model()
     print("[Test] Model trained and saved successfully!")
