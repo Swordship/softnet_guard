@@ -7,7 +7,7 @@ from database import db_manager
 from modules import device_monitor
 from modules import anomaly_detector
 import threading
-
+from modules import anomaly_detector
 app = Flask(__name__, template_folder="dashboard/templates")
 
 # ── API Routes ────────────────────────────────
@@ -65,7 +65,9 @@ def api_alerts():
     rows = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify(rows)
-
+@app.route("/api/alerts")
+def api_alerts():
+    return jsonify(db_manager.get_alerts())
 # ── Helper ────────────────────────────────────
 def get_stats():
     devices = db_manager.get_all_devices()
@@ -92,7 +94,20 @@ def start_background_tasks():
     t = threading.Thread(target=scan_loop, daemon=True)
     t.start()
     print("[App] Background scanner started.")
+def start_background_tasks():
+    def scan_loop():
+        import time
+        while True:
+            try:
+                device_monitor.scan_network()
+                anomaly_detector.run_detection_once()
+            except Exception as e:
+                print(f"[Scanner] Error: {e}")
+            time.sleep(60)
 
+    t = threading.Thread(target=scan_loop, daemon=True)
+    t.start()
+    print("[App] Background tasks started.")
 if __name__ == "__main__":
     db_manager.initialize_db()
     start_background_tasks()
