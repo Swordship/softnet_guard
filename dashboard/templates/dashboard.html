@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftNet-Guard Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+        
+        .navbar {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+        }
+        .navbar h1 { color: #38bdf8; font-size: 1.4rem; }
+        .navbar span { color: #94a3b8; font-size: 0.85rem; }
+        
+        .container { padding: 2rem; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .section { margin-bottom: 2rem; }
+        .section h2 {
+            color: #38bdf8;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th {
+            background: #0f172a;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        td {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid #334155;
+            font-size: 0.9rem;
+        }
+        tr:hover { background: #263148; }
+
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .badge-active  { background: #166534; color: #86efac; }
+        .badge-inactive{ background: #7f1d1d; color: #fca5a5; }
+
+        .scan-btn {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .scan-btn:hover { background: #0369a1; }
+
+        #last-updated {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <h1>🛡️ SoftNet-Guard</h1>
+    <span id="last-updated">Loading...</span>
+</nav>
+
+<div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number" id="total-devices">-</div>
+            <div class="label">Total Devices</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="active-devices">-</div>
+            <div class="label">Active Devices</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="inactive-devices">-</div>
+            <div class="label">Inactive Devices</div>
+        </div>
+    </div>
+
+    <!-- Scan Button -->
+    <button class="scan-btn" onclick="triggerScan()">🔍 Scan Now</button>
+
+    <!-- Devices Table -->
+    <div class="section">
+        <h2>Connected Devices</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>IP Address</th>
+                    <th>MAC Address</th>
+                    <th>Hostname</th>
+                    <th>Vendor</th>
+                    <th>Status</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody id="devices-tbody">
+                <tr><td colspan="6" style="text-align:center;color:#64748b">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Traffic Table -->
+    <div class="section">
+        <h2>Traffic Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>IP Address</th>
+                    <th>Hostname</th>
+                    <th>Bytes Sent</th>
+                    <th>Bytes Received</th>
+                    <th>Total Packets</th>
+                </tr>
+            </thead>
+            <tbody id="traffic-tbody">
+                <tr><td colspan="5" style="text-align:center;color:#64748b">No traffic data yet</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function formatBytes(b) {
+    if (!b) return "0 B";
+    if (b > 1048576) return (b/1048576).toFixed(1) + " MB";
+    if (b > 1024)    return (b/1024).toFixed(1) + " KB";
+    return b + " B";
+}
+
+async function loadStats() {
+    const r = await fetch("/api/stats");
+    const d = await r.json();
+    document.getElementById("total-devices").textContent    = d.total_devices;
+    document.getElementById("active-devices").textContent   = d.active_devices;
+    document.getElementById("inactive-devices").textContent = d.inactive_devices;
+}
+
+async function loadDevices() {
+    const r = await fetch("/api/devices");
+    const devices = await r.json();
+    const tbody = document.getElementById("devices-tbody");
+    if (!devices.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b">No devices found</td></tr>';
+        return;
+    }
+    tbody.innerHTML = devices.map(d => `
+        <tr>
+            <td>${d.ip_address || "-"}</td>
+            <td style="font-family:monospace;font-size:0.8rem">${d.mac_address || "-"}</td>
+            <td>${d.host_name || "Unknown"}</td>
+            <td>${d.vendor || "Unknown"}</td>
+            <td><span class="badge ${d.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${d.status}</span></td>
+            <td style="color:#64748b;font-size:0.8rem">${d.last_seen ? d.last_seen.substring(0,19) : "-"}</td>
+        </tr>
+    `).join("");
+}
+
+async function loadTraffic() {
+    const r = await fetch("/api/traffic");
+    const rows = await r.json();
+    const tbody = document.getElementById("traffic-tbody");
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b">No traffic data yet — run traffic analyzer</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map(t => `
+        <tr>
+            <td>${t.ip_address || "-"}</td>
+            <td>${t.host_name || "Unknown"}</td>
+            <td>${formatBytes(t.total_sent)}</td>
+            <td>${formatBytes(t.total_received)}</td>
+            <td>${t.total_packets || 0}</td>
+        </tr>
+    `).join("");
+}
+
+async function triggerScan() {
+    document.querySelector(".scan-btn").textContent = "⏳ Scanning...";
+    await fetch("/api/scan", { method: "POST" });
+    await refresh();
+    document.querySelector(".scan-btn").textContent = "🔍 Scan Now";
+}
+
+async function refresh() {
+    await Promise.all([loadStats(), loadDevices(), loadTraffic()]);
+    document.getElementById("last-updated").textContent =
+        "Last updated: " + new Date().toLocaleTimeString();
+}
+
+// Auto refresh every 30 seconds
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>
