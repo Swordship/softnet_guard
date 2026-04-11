@@ -7,10 +7,11 @@ from database import db_manager
 from modules import device_monitor
 from modules import anomaly_detector
 import threading
-from modules import anomaly_detector
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__, template_folder="dashboard/templates")
 
-# ── API Routes ────────────────────────────────
 @app.route("/")
 def dashboard():
     devices = db_manager.get_all_devices()
@@ -39,9 +40,9 @@ def api_traffic():
     cursor = conn.cursor()
     cursor.execute("""
         SELECT d.ip_address, d.host_name,
-               SUM(t.bytes_sent) as total_sent,
+               SUM(t.bytes_sent)     as total_sent,
                SUM(t.bytes_received) as total_received,
-               SUM(t.packet_count) as total_packets
+               SUM(t.packet_count)   as total_packets
         FROM traffic_stats t
         JOIN devices d ON t.device_id = d.id
         GROUP BY t.device_id
@@ -53,47 +54,50 @@ def api_traffic():
 
 @app.route("/api/alerts")
 def api_alerts():
-    conn = db_manager.get_connection()
-    if not conn:
-        return jsonify([])
-    conn.row_factory = __import__('sqlite3').Row
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT * FROM alerts
-        ORDER BY occurred_at DESC LIMIT 20
-    """)
-    rows = [dict(row) for row in cursor.fetchall()]
-    conn.close()
-    return jsonify(rows)
-@app.route("/api/alerts")
-def api_alerts():
     return jsonify(db_manager.get_alerts())
-# ── Helper ────────────────────────────────────
+
+@app.route("/api/check-url", methods=["POST"])
+def api_check_url():
+    import requests as req
+    data    = request.get_json()
+    url     = data.get("url", "").strip()
+    API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+    if not url.startswith("http"):
+        url = "http://" + url
+    try:
+        payload = {
+            "client": {"clientId": "softnet-guard", "clientVersion": "1.0"},
+            "threatInfo": {
+                "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+                "platformTypes": ["ANY_PLATFORM"],
+                "threatEntryTypes": ["URL"],
+                "threatEntries": [{"url": url}]
+            }
+        }
+        r = req.post(
+            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={API_KEY}",
+            json=payload, timeout=5
+        )
+        result = r.json()
+        if result.get("matches"):
+            threat = result["matches"][0].get("threatType", "MALWARE")
+            return jsonify({"safe": False, "threat_type": threat, "url": url})
+        return jsonify({"safe": True, "url": url})
+    except Exception as e:
+        return jsonify({"safe": True, "url": url, "note": str(e)})
+
 def get_stats():
-    devices = db_manager.get_all_devices()
-    total   = len(devices)
-    active  = len([d for d in devices if d["status"] == "Active"])
+    devices  = db_manager.get_all_devices()
+    total    = len(devices)
+    active   = len([d for d in devices if d["status"] == "Active"])
     return {
-        "total_devices": total,
-        "active_devices": active,
+        "total_devices":    total,
+        "active_devices":   active,
         "inactive_devices": total - active
     }
 
-# ── Background threads ────────────────────────
-def start_background_tasks():
-    # Device scanner — runs every 60 seconds
-    def scan_loop():
-        import time
-        while True:
-            try:
-                device_monitor.scan_network()
-            except Exception as e:
-                print(f"[Scanner] Error: {e}")
-            time.sleep(60)
-
-    t = threading.Thread(target=scan_loop, daemon=True)
-    t.start()
-    print("[App] Background scanner started.")
 def start_background_tasks():
     def scan_loop():
         import time
@@ -104,10 +108,10 @@ def start_background_tasks():
             except Exception as e:
                 print(f"[Scanner] Error: {e}")
             time.sleep(60)
-
     t = threading.Thread(target=scan_loop, daemon=True)
     t.start()
     print("[App] Background tasks started.")
+
 if __name__ == "__main__":
     db_manager.initialize_db()
     start_background_tasks()

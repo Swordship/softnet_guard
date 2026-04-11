@@ -17,13 +17,22 @@
             border-bottom: 1px solid #334155;
         }
         .navbar h1 { color: #38bdf8; font-size: 1.4rem; }
-        .navbar span { color: #94a3b8; font-size: 0.85rem; }
-        
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+        }
+        .nav-links a:hover { background: #334155; color: #e2e8f0; }
+        .nav-links a.active { background: #0284c7; color: white; }
+
         .container { padding: 2rem; }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -45,14 +54,23 @@
             margin-top: 0.5rem;
         }
 
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
         .section { margin-bottom: 2rem; }
-        .section h2 {
-            color: #38bdf8;
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 1rem;
-            font-size: 1.1rem;
             border-bottom: 1px solid #334155;
             padding-bottom: 0.5rem;
         }
+        .section-header h2 { color: #38bdf8; font-size: 1.1rem; }
 
         table {
             width: 100%;
@@ -81,32 +99,71 @@
             font-size: 0.75rem;
             font-weight: bold;
         }
-        .badge-active  { background: #166534; color: #86efac; }
-        .badge-inactive{ background: #7f1d1d; color: #fca5a5; }
+        .badge-active   { background: #166534; color: #86efac; }
+        .badge-inactive { background: #7f1d1d; color: #fca5a5; }
+        .badge-critical { background: #7f1d1d; color: #fca5a5; }
+        .badge-high     { background: #7c2d12; color: #fdba74; }
+        .badge-medium   { background: #713f12; color: #fde68a; }
+        .badge-low      { background: #1e3a5f; color: #93c5fd; }
+        .badge-normal   { background: #166534; color: #86efac; }
 
-        .scan-btn {
-            background: #0284c7;
-            color: white;
+        .btn {
             border: none;
-            padding: 0.6rem 1.5rem;
+            padding: 0.5rem 1.2rem;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
-        .scan-btn:hover { background: #0369a1; }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; }
+        .btn-success { background: #166534; color: #86efac; }
+        .btn-success:hover { background: #14532d; }
 
-        #last-updated {
-            color: #64748b;
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
+        /* URL Checker */
+        .url-checker {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
         }
+        .url-checker h2 { color: #38bdf8; margin-bottom: 1rem; }
+        .url-input-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .url-input-row input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .url-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+        }
+        .url-result.safe     { background: #166534; color: #86efac; }
+        .url-result.unsafe   { background: #7f1d1d; color: #fca5a5; }
+        .url-result.checking { background: #1e3a5f; color: #93c5fd; }
+
+        #last-updated { color: #64748b; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
     <h1>🛡️ SoftNet-Guard</h1>
+    <div class="nav-links">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#alerts">Alerts</a>
+        <a href="#url-checker">URL Checker</a>
+    </div>
     <span id="last-updated">Loading...</span>
 </nav>
 
@@ -126,48 +183,91 @@
             <div class="number" id="inactive-devices">-</div>
             <div class="label">Inactive Devices</div>
         </div>
+        <div class="stat-card">
+            <div class="number" id="total-alerts">-</div>
+            <div class="label">Open Alerts</div>
+        </div>
     </div>
 
     <!-- Scan Button -->
-    <button class="scan-btn" onclick="triggerScan()">🔍 Scan Now</button>
+    <button class="btn btn-primary" onclick="triggerScan()" style="margin-bottom:1.5rem">
+        🔍 Scan Network Now
+    </button>
 
-    <!-- Devices Table -->
-    <div class="section">
-        <h2>Connected Devices</h2>
+    <!-- Devices + Traffic -->
+    <div class="grid-2">
+        <!-- Devices -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Connected Devices</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>Hostname</th>
+                        <th>Vendor</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="devices-tbody">
+                    <tr><td colspan="4" style="text-align:center;color:#64748b">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Traffic -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Traffic Summary</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>Sent</th>
+                        <th>Received</th>
+                        <th>Packets</th>
+                    </tr>
+                </thead>
+                <tbody id="traffic-tbody">
+                    <tr><td colspan="4" style="text-align:center;color:#64748b">No data yet</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="section" id="alerts">
+        <div class="section-header">
+            <h2>🚨 Security Alerts</h2>
+        </div>
         <table>
             <thead>
                 <tr>
-                    <th>IP Address</th>
-                    <th>MAC Address</th>
-                    <th>Hostname</th>
-                    <th>Vendor</th>
-                    <th>Status</th>
-                    <th>Last Seen</th>
+                    <th>Time</th>
+                    <th>Device</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Severity</th>
                 </tr>
             </thead>
-            <tbody id="devices-tbody">
-                <tr><td colspan="6" style="text-align:center;color:#64748b">Loading...</td></tr>
+            <tbody id="alerts-tbody">
+                <tr><td colspan="5" style="text-align:center;color:#64748b">No alerts yet</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Traffic Table -->
-    <div class="section">
-        <h2>Traffic Summary</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>IP Address</th>
-                    <th>Hostname</th>
-                    <th>Bytes Sent</th>
-                    <th>Bytes Received</th>
-                    <th>Total Packets</th>
-                </tr>
-            </thead>
-            <tbody id="traffic-tbody">
-                <tr><td colspan="5" style="text-align:center;color:#64748b">No traffic data yet</td></tr>
-            </tbody>
-        </table>
+    <!-- URL Checker -->
+    <div class="url-checker" id="url-checker">
+        <h2>🔗 URL Safety Checker</h2>
+        <div class="url-input-row">
+            <input type="text" id="url-input"
+                placeholder="Enter URL to check (e.g. http://example.com)"
+                onkeydown="if(event.key==='Enter') checkURL()">
+            <button class="btn btn-primary" onclick="checkURL()">Check URL</button>
+        </div>
+        <div class="url-result" id="url-result"></div>
     </div>
 
 </div>
@@ -178,6 +278,17 @@ function formatBytes(b) {
     if (b > 1048576) return (b/1048576).toFixed(1) + " MB";
     if (b > 1024)    return (b/1024).toFixed(1) + " KB";
     return b + " B";
+}
+
+function severityBadge(s) {
+    const map = {
+        CRITICAL: "badge-critical",
+        HIGH:     "badge-high",
+        MEDIUM:   "badge-medium",
+        LOW:      "badge-low",
+        NORMAL:   "badge-normal"
+    };
+    return `<span class="badge ${map[s] || 'badge-low'}">${s}</span>`;
 }
 
 async function loadStats() {
@@ -193,17 +304,15 @@ async function loadDevices() {
     const devices = await r.json();
     const tbody = document.getElementById("devices-tbody");
     if (!devices.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b">No devices found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b">No devices found</td></tr>';
         return;
     }
     tbody.innerHTML = devices.map(d => `
         <tr>
-            <td>${d.ip_address || "-"}</td>
-            <td style="font-family:monospace;font-size:0.8rem">${d.mac_address || "-"}</td>
+            <td style="font-size:0.85rem">${d.ip_address || "-"}</td>
             <td>${d.host_name || "Unknown"}</td>
-            <td>${d.vendor || "Unknown"}</td>
-            <td><span class="badge ${d.status === 'Active' ? 'badge-active' : 'badge-inactive'}">${d.status}</span></td>
-            <td style="color:#64748b;font-size:0.8rem">${d.last_seen ? d.last_seen.substring(0,19) : "-"}</td>
+            <td style="font-size:0.8rem;color:#94a3b8">${d.vendor || "Unknown"}</td>
+            <td><span class="badge ${d.status==='Active'?'badge-active':'badge-inactive'}">${d.status}</span></td>
         </tr>
     `).join("");
 }
@@ -213,13 +322,12 @@ async function loadTraffic() {
     const rows = await r.json();
     const tbody = document.getElementById("traffic-tbody");
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b">No traffic data yet — run traffic analyzer</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b">No traffic data yet</td></tr>';
         return;
     }
     tbody.innerHTML = rows.map(t => `
         <tr>
-            <td>${t.ip_address || "-"}</td>
-            <td>${t.host_name || "Unknown"}</td>
+            <td style="font-size:0.85rem">${t.ip_address || "-"}</td>
             <td>${formatBytes(t.total_sent)}</td>
             <td>${formatBytes(t.total_received)}</td>
             <td>${t.total_packets || 0}</td>
@@ -227,20 +335,69 @@ async function loadTraffic() {
     `).join("");
 }
 
+async function loadAlerts() {
+    const r = await fetch("/api/alerts");
+    const alerts = await r.json();
+    const tbody = document.getElementById("alerts-tbody");
+    document.getElementById("total-alerts").textContent = alerts.length;
+    if (!alerts.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b">No alerts yet — system is monitoring</td></tr>';
+        return;
+    }
+    tbody.innerHTML = alerts.map(a => `
+        <tr>
+            <td style="font-size:0.8rem;color:#64748b">${(a.occurred_at||"").substring(0,19)}</td>
+            <td style="font-size:0.85rem">${a.ip_address || "Unknown"}</td>
+            <td style="font-size:0.85rem">${a.alert_type || "-"}</td>
+            <td style="font-size:0.85rem">${a.message || "-"}</td>
+            <td>${severityBadge(a.severity)}</td>
+        </tr>
+    `).join("");
+}
+
+async function checkURL() {
+    const url = document.getElementById("url-input").value.trim();
+    if (!url) return;
+    const result = document.getElementById("url-result");
+    result.className = "url-result checking";
+    result.style.display = "block";
+    result.textContent = "⏳ Checking URL safety...";
+    try {
+        const r = await fetch("/api/check-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url })
+        });
+        const d = await r.json();
+        if (d.safe) {
+            result.className = "url-result safe";
+            result.textContent = "✅ URL appears SAFE — no threats detected.";
+        } else {
+            result.className = "url-result unsafe";
+            result.textContent = `🚨 UNSAFE — Threat: ${d.threat_type || "Malicious content detected"}`;
+        }
+    } catch(e) {
+        result.className = "url-result checking";
+        result.textContent = "⚠️ Check failed — is the server running?";
+    }
+}
+
 async function triggerScan() {
-    document.querySelector(".scan-btn").textContent = "⏳ Scanning...";
+    const btn = document.querySelector(".btn-primary");
+    btn.textContent = "⏳ Scanning...";
+    btn.disabled = true;
     await fetch("/api/scan", { method: "POST" });
     await refresh();
-    document.querySelector(".scan-btn").textContent = "🔍 Scan Now";
+    btn.textContent = "🔍 Scan Network Now";
+    btn.disabled = false;
 }
 
 async function refresh() {
-    await Promise.all([loadStats(), loadDevices(), loadTraffic()]);
+    await Promise.all([loadStats(), loadDevices(), loadTraffic(), loadAlerts()]);
     document.getElementById("last-updated").textContent =
         "Last updated: " + new Date().toLocaleTimeString();
 }
 
-// Auto refresh every 30 seconds
 refresh();
 setInterval(refresh, 30000);
 </script>
