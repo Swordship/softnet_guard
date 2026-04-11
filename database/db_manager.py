@@ -157,5 +157,43 @@ def get_device_id_by_ip(ip_address):
         return None
     finally:
         conn.close()
+def create_alert(alert_type, severity, device_id, message):
+    conn = get_connection()
+    if not conn:
+        return False
+    current_time = datetime.now(timezone.utc).isoformat()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO alerts (occurred_at, device_id, alert_type, message, severity)
+            VALUES (?, ?, ?, ?, ?)
+        """, (current_time, device_id, alert_type, message, severity))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to create alert: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_alerts(limit=20):
+    conn = get_connection()
+    if not conn:
+        return []
+    conn.row_factory = sqlite3.Row
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT a.*, d.ip_address, d.host_name 
+            FROM alerts a
+            LEFT JOIN devices d ON a.device_id = d.id
+            ORDER BY a.occurred_at DESC LIMIT ?
+        """, (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] Failed to get alerts: {e}")
+        return []
+    finally:
+        conn.close()
 if __name__ == "__main__":
     initialize_db()
