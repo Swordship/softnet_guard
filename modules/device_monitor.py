@@ -113,6 +113,6 @@ def get_vendor(mac_address: str) -> str:
             return response.text  # ← return not print!
         return "Unknown"
     except requests.RequestException:
-        return "request error"
+        return "Unknown"
 if __name__ == "__main__":
     scan_network()
