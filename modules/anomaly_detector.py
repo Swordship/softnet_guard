@@ -88,10 +88,10 @@ def classify_anomaly(vector):
 
 # ── Get severity from score ───────────────────
 def get_severity(score):
-    if score >= 0.80: return "CRITICAL"
-    if score >= 0.65: return "HIGH"
-    if score >= 0.50: return "MEDIUM"
-    if score >= 0.35: return "LOW"
+    if score >= 0.85: return "CRITICAL"
+    if score >= 0.75: return "HIGH"
+    if score >= 0.65: return "MEDIUM"
+    if score >= 0.55: return "LOW"
     return "NORMAL"
 def run_detection_once():
     """Score all devices from recent traffic and create alerts if anomalous."""
@@ -145,7 +145,7 @@ def run_detection_once():
             anomaly_type = classify_anomaly(vector)
             msg = f"Anomaly detected: {anomaly_type} (score={score:.2f})"
             db_manager.create_alert(
-                alert_type = anomaly_type,
+                alert_type = "ANOMALY",  # ← change this
                 severity   = severity,
                 device_id  = row["device_id"],
                 message    = msg
