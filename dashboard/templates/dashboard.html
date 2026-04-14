@@ -1,403 +1,867 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoftNet-Guard Dashboard</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
-        
-        .navbar {
-            background: #1e293b;
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #334155;
-        }
-        .navbar h1 { color: #38bdf8; font-size: 1.4rem; }
-        .nav-links { display: flex; gap: 1rem; }
-        .nav-links a {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 0.9rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-        }
-        .nav-links a:hover { background: #334155; color: #e2e8f0; }
-        .nav-links a.active { background: #0284c7; color: white; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoftNet-Guard · Network Security</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--card:#0f1624;--card2:#141c2e;--border:#1c2840;--border2:#243050;
+  --text:#d4dff0;--sub:#6a85a0;--head:#eef2fa;
+  --blue:#3b9eff;--green:#22c55e;--red:#f43f5e;--yellow:#f59e0b;--purple:#a78bfa;--teal:#2dd4bf;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;}
 
-        .container { padding: 2rem; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-        .stat-card .number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #38bdf8;
-        }
-        .stat-card .label {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
+nav{height:56px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:sticky;top:0;z-index:50;}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--head);}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.logo span{color:var(--blue);}
+.nsep{flex:1;}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.nav-ts{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sub);}
+.nav-btn{background:var(--card2);border:1px solid var(--border2);color:var(--sub);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.nav-btn:hover{border-color:var(--blue);color:var(--blue);}
+.bell-wrap{position:relative;}
+.bell{background:var(--card2);border:1px solid var(--border2);color:var(--sub);width:32px;height:32px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;}
+.bell:hover{border-color:var(--blue);color:var(--blue);}
+.bell-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.bell-drop{position:absolute;top:calc(100% + 6px);right:0;width:310px;background:var(--card);border:1px solid var(--border2);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:none;z-index:100;}
+.bell-drop.open{display:block;}
+.bd-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--head);display:flex;justify-content:space-between;}
+.bd-list{max-height:240px;overflow-y:auto;}
+.bd-item{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;transition:background .15s;}
+.bd-item:hover{background:var(--card2);}
+.bd-item:last-child{border-bottom:none;}
+.bd-t{font-size:11px;font-weight:500;color:var(--head);margin-bottom:2px;}
+.bd-s{font-size:10px;color:var(--sub);font-family:'JetBrains Mono',monospace;}
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
+.page{display:grid;grid-template-columns:180px 1fr;min-height:calc(100vh - 56px);}
+aside{background:var(--card);border-right:1px solid var(--border);padding:16px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
+.sb-grp{margin-bottom:16px;}
+.sb-label{padding:0 14px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--sub);font-weight:600;}
+.sb-link{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12px;color:var(--sub);cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.sb-link:hover{color:var(--text);background:var(--card2);}
+.sb-link.active{color:var(--blue);background:rgba(59,158,255,.06);border-left-color:var(--blue);}
+.sb-icon{font-size:13px;width:16px;}
 
-        .section { margin-bottom: 2rem; }
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 0.5rem;
-        }
-        .section-header h2 { color: #38bdf8; font-size: 1.1rem; }
+.content{padding:16px;overflow-y:auto;}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #1e293b;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        th {
-            background: #0f172a;
-            padding: 0.75rem 1rem;
-            text-align: left;
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-        td {
-            padding: 0.75rem 1rem;
-            border-top: 1px solid #334155;
-            font-size: 0.9rem;
-        }
-        tr:hover { background: #263148; }
+/* VIEWS — only active view shown */
+.view{display:none;}
+.view.active{display:block;}
 
-        .badge {
-            padding: 0.2rem 0.6rem;
-            border-radius: 99px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-        .badge-active   { background: #166534; color: #86efac; }
-        .badge-inactive { background: #7f1d1d; color: #fca5a5; }
-        .badge-critical { background: #7f1d1d; color: #fca5a5; }
-        .badge-high     { background: #7c2d12; color: #fdba74; }
-        .badge-medium   { background: #713f12; color: #fde68a; }
-        .badge-low      { background: #1e3a5f; color: #93c5fd; }
-        .badge-normal   { background: #166534; color: #86efac; }
+/* PAGE HEADER */
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ph-title{font-size:16px;font-weight:700;color:var(--head);}
+.ph-sub{font-size:11px;color:var(--sub);margin-top:2px;}
+.ph-actions{display:flex;gap:8px;}
 
-        .btn {
-            border: none;
-            padding: 0.5rem 1.2rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .btn-primary { background: #0284c7; color: white; }
-        .btn-primary:hover { background: #0369a1; }
-        .btn-success { background: #166534; color: #86efac; }
-        .btn-success:hover { background: #14532d; }
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.sc-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.sc-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);font-weight:600;margin-bottom:8px;}
+.sc-value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--head);line-height:1;margin-bottom:4px;}
+.sc-sub{font-size:10px;color:var(--sub);}
 
-        /* URL Checker */
-        .url-checker {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .url-checker h2 { color: #38bdf8; margin-bottom: 1rem; }
-        .url-input-row {
-            display: flex;
-            gap: 0.75rem;
-        }
-        .url-input-row input {
-            flex: 1;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            padding: 0.6rem 1rem;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-        .url-result {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 6px;
-            display: none;
-        }
-        .url-result.safe     { background: #166534; color: #86efac; }
-        .url-result.unsafe   { background: #7f1d1d; color: #fca5a5; }
-        .url-result.checking { background: #1e3a5f; color: #93c5fd; }
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.g1{margin-bottom:10px;}
 
-        #last-updated { color: #64748b; font-size: 0.8rem; }
-    </style>
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.card-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.15);}
+.card-title{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:6px;}
+.card-title b{color:var(--head);font-weight:600;}
+.card-note{font-size:10px;color:var(--sub);}
+.card-body{padding:12px;}
+.ch{height:150px;position:relative;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;}
+th{padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;background:rgba(0,0,0,.1);}
+td{padding:8px 12px;font-size:11px;border-bottom:1px solid rgba(28,40,64,.5);}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(59,158,255,.03);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:10px;}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-family:'JetBrains Mono',monospace;}
+.ch-active {background:rgba(34,197,94,.1); color:var(--green);}
+.ch-inactive{background:rgba(244,63,94,.1); color:var(--red);}
+.ch-critical{background:rgba(244,63,94,.15);color:var(--red);}
+.ch-high    {background:rgba(245,158,11,.1);color:var(--yellow);}
+.ch-medium  {background:rgba(167,139,250,.1);color:var(--purple);}
+.ch-low     {background:rgba(59,158,255,.1); color:var(--blue);}
+.ch-normal  {background:rgba(34,197,94,.1); color:var(--green);}
+.ch-anomaly {background:rgba(245,158,11,.1);color:var(--yellow);}
+.ch-mal     {background:rgba(244,63,94,.15);color:var(--red);}
+.ch-new     {background:rgba(45,212,191,.1); color:var(--teal);}
+
+/* DNS */
+.dns-feed{height:220px;overflow-y:auto;background:rgba(0,0,0,.2);border-radius:6px;padding:6px 10px;}
+.dns-row{display:flex;gap:10px;padding:2px 0;border-bottom:1px solid rgba(28,40,64,.3);font-family:'JetBrains Mono',monospace;font-size:10px;}
+.dns-row:last-child{border-bottom:none;}
+.d-time{color:var(--sub);min-width:52px;}
+.d-ip{color:var(--teal);min-width:90px;}
+.d-dom{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.d-dom.evil{color:var(--red);font-weight:600;}
+
+/* URL */
+.url-bar{display:flex;gap:8px;margin-bottom:8px;}
+.url-inp{flex:1;background:rgba(0,0,0,.25);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;transition:border-color .2s;}
+.url-inp:focus{outline:none;border-color:var(--blue);}
+.url-inp::placeholder{color:var(--sub);}
+.url-result{display:none;padding:8px 10px;border-radius:6px;font-size:11px;font-weight:500;margin-top:4px;}
+.ur-ok {display:block;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);}
+.ur-bad{display:block;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--red);}
+.ur-chk{display:block;background:rgba(59,158,255,.08);border:1px solid rgba(59,158,255,.2);color:var(--blue);}
+
+/* ACK BUTTON */
+.ack-btn{background:none;border:1px solid var(--border2);color:var(--sub);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:10px;font-family:'Inter',sans-serif;transition:all .15s;}
+.ack-btn:hover{border-color:var(--green);color:var(--green);}
+.acked{color:var(--green);font-size:10px;font-family:'JetBrains Mono',monospace;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s;}
+.btn-blue{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.4);color:var(--blue);}
+.btn-blue:hover{background:rgba(59,158,255,.18);border-color:var(--blue);}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--sub);}
+.btn-ghost:hover{border-color:var(--sub);color:var(--text);}
+.btn-green{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green);}
+.btn-green:hover{background:rgba(34,197,94,.15);}
+.btn-red{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.3);color:var(--red);}
+
+/* ACTION BAR */
+.abar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+.abar-r{flex:1;}
+.abar-note{font-size:10px;color:var(--sub);font-family:'JetBrains Mono',monospace;}
+
+/* EMPTY */
+.empty{padding:24px;text-align:center;color:var(--sub);font-size:11px;}
+
+/* INFO BOX */
+.info-box{background:rgba(59,158,255,.06);border:1px solid rgba(59,158,255,.15);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--blue);margin-bottom:12px;}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.toast{pointer-events:all;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;min-width:260px;max-width:320px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tin .3s ease;}
+@keyframes tin{from{transform:translateX(110%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.t-danger{border-left:3px solid var(--red);}
+.t-warn{border-left:3px solid var(--yellow);}
+.t-ok{border-left:3px solid var(--green);}
+.t-info{border-left:3px solid var(--blue);}
+.t-ico{font-size:14px;}
+.t-body{flex:1;}
+.t-title{font-size:11px;font-weight:600;color:var(--head);margin-bottom:2px;}
+.t-msg{font-size:10px;color:var(--sub);}
+.t-close{background:none;border:none;color:var(--sub);cursor:pointer;font-size:12px;padding:0;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:24px;width:380px;box-shadow:0 40px 80px rgba(0,0,0,.7);}
+.modal h3{font-size:14px;font-weight:600;color:var(--head);margin-bottom:4px;}
+.modal p{font-size:11px;color:var(--sub);margin-bottom:18px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);font-weight:600;margin-bottom:4px;}
+.field input,.field select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;transition:border-color .2s;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);}
+.field select{cursor:pointer;}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
 </head>
 <body>
 
-<nav class="navbar">
-    <h1>🛡️ SoftNet-Guard</h1>
-    <div class="nav-links">
-        <a href="#" class="active">Dashboard</a>
-        <a href="#alerts">Alerts</a>
-        <a href="#url-checker">URL Checker</a>
+<!-- NAV -->
+<nav>
+  <div class="logo"><div class="logo-icon">🛡</div>Soft<span>Net</span>-Guard</div>
+  <div class="nsep"></div>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+  <span class="nav-ts" id="nav-ts">--:--:--</span>
+  <button class="nav-btn" onclick="openModal()">📧 Email Alerts</button>
+  <div class="bell-wrap">
+    <button class="bell" onclick="toggleBell()">🔔<div class="bell-badge" id="bell-badge"></div></button>
+    <div class="bell-drop" id="bell-drop">
+      <div class="bd-head"><span>Notifications</span><span id="bell-ct" style="color:var(--sub);font-weight:400">0</span></div>
+      <div class="bd-list" id="bell-list"><div class="empty">No alerts yet</div></div>
     </div>
-    <span id="last-updated">Loading...</span>
+  </div>
 </nav>
 
-<div class="container">
+<div class="page">
+<!-- SIDEBAR -->
+<aside>
+  <div class="sb-grp">
+    <div class="sb-label">Monitor</div>
+    <div class="sb-link active" onclick="goto('dashboard')"><span class="sb-icon">📊</span>Dashboard</div>
+    <div class="sb-link" onclick="goto('devices')"><span class="sb-icon">📡</span>Devices</div>
+    <div class="sb-link" onclick="goto('traffic')"><span class="sb-icon">📶</span>Traffic</div>
+    <div class="sb-link" onclick="goto('dns')"><span class="sb-icon">🌐</span>DNS Log</div>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-label">Security</div>
+    <div class="sb-link" onclick="goto('alerts')"><span class="sb-icon">🚨</span>Alerts</div>
+    <div class="sb-link" onclick="goto('urlchecker')"><span class="sb-icon">🔗</span>URL Checker</div>
+    <div class="sb-link" onclick="goto('mlengine')"><span class="sb-icon">🤖</span>ML Engine</div>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-label">Actions</div>
+    <div class="sb-link" onclick="triggerScan()"><span class="sb-icon">🔍</span>Scan Now</div>
+    <div class="sb-link" onclick="reqNotif()"><span class="sb-icon">🔔</span>Notifications</div>
+  </div>
+</aside>
 
-    <!-- Stats -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="number" id="total-devices">-</div>
-            <div class="label">Total Devices</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="active-devices">-</div>
-            <div class="label">Active Devices</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="inactive-devices">-</div>
-            <div class="label">Inactive Devices</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="total-alerts">-</div>
-            <div class="label">Open Alerts</div>
-        </div>
+<!-- CONTENT -->
+<div class="content">
+
+<!-- ══════════════════ DASHBOARD VIEW ══════════════════ -->
+<div class="view active" id="view-dashboard">
+  <div class="abar">
+    <button class="btn btn-blue" id="scan-btn" onclick="triggerScan()">🔍 <span id="scan-text">Scan Network</span></button>
+    <button class="btn btn-ghost" onclick="refresh()">↺ Refresh</button>
+    <button class="btn btn-ghost" onclick="reqNotif()">🔔 Browser Alerts</button>
+    <div class="abar-r"></div>
+    <span class="abar-note">AUTO-REFRESH: 30s</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="sc-accent" style="background:var(--blue)"></div>
+      <div class="sc-label">Total Devices</div>
+      <div class="sc-value" id="v-total">—</div>
+      <div class="sc-sub">On this network</div>
     </div>
-
-    <!-- Scan Button -->
-    <button class="btn btn-primary" onclick="triggerScan()" style="margin-bottom:1.5rem">
-        🔍 Scan Network Now
-    </button>
-
-    <!-- Devices + Traffic -->
-    <div class="grid-2">
-        <!-- Devices -->
-        <div class="section">
-            <div class="section-header">
-                <h2>Connected Devices</h2>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>Hostname</th>
-                        <th>Vendor</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="devices-tbody">
-                    <tr><td colspan="4" style="text-align:center;color:#64748b">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Traffic -->
-        <div class="section">
-            <div class="section-header">
-                <h2>Traffic Summary</h2>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>Sent</th>
-                        <th>Received</th>
-                        <th>Packets</th>
-                    </tr>
-                </thead>
-                <tbody id="traffic-tbody">
-                    <tr><td colspan="4" style="text-align:center;color:#64748b">No data yet</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="stat-card">
+      <div class="sc-accent" style="background:var(--green)"></div>
+      <div class="sc-label">Active Now</div>
+      <div class="sc-value" id="v-active" style="color:var(--green)">—</div>
+      <div class="sc-sub">Responding to ARP</div>
     </div>
+    <div class="stat-card">
+      <div class="sc-accent" style="background:var(--red)"></div>
+      <div class="sc-label">Open Alerts</div>
+      <div class="sc-value" id="v-alerts" style="color:var(--red)">—</div>
+      <div class="sc-sub">Unresolved threats</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-accent" style="background:var(--purple)"></div>
+      <div class="sc-label">Packets Captured</div>
+      <div class="sc-value" id="v-packets" style="color:var(--purple)">—</div>
+      <div class="sc-sub">Total network packets</div>
+    </div>
+  </div>
 
-    <!-- Alerts -->
-    <div class="section" id="alerts">
-        <div class="section-header">
-            <h2>🚨 Security Alerts</h2>
-        </div>
+  <div class="g3">
+    <div class="card"><div class="card-head"><div class="card-title">📶 <b>Traffic Volume</b></div></div><div class="card-body"><div class="ch"><canvas id="ch-traffic"></canvas></div></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">📡 <b>Device Status</b></div></div><div class="card-body"><div class="ch"><canvas id="ch-device"></canvas></div></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">📈 <b>Alert Trend</b></div></div><div class="card-body"><div class="ch"><canvas id="ch-alert"></canvas></div></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">📡 <b>Connected Devices</b></div></div>
+      <table><thead><tr><th>IP Address</th><th>Hostname</th><th>Vendor</th><th>Status</th></tr></thead>
+      <tbody id="dash-devices"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">📶 <b>Traffic Summary</b></div></div>
+      <table><thead><tr><th>IP Address</th><th>Sent</th><th>Received</th><th>Packets</th></tr></thead>
+      <tbody id="dash-traffic"><tr><td colspan="4" class="empty">Run traffic_analyzer.py</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">🚨 <b>Recent Alerts</b></div><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px" onclick="goto('alerts')">View All →</button></div>
+      <table><thead><tr><th>Time</th><th>Device</th><th>Type</th><th>Severity</th></tr></thead>
+      <tbody id="dash-alerts"><tr><td colspan="4" class="empty">System monitoring…</td></tr></tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">🌐 <b>Live DNS Feed</b></div><span class="card-note">requires traffic_analyzer as admin</span></div>
+      <div class="card-body" style="padding:8px"><div class="dns-feed" id="dns-feed-dash"><div class="empty" style="padding:12px">Run modules/traffic_analyzer.py as Administrator</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ DEVICES VIEW ══════════════════ -->
+<div class="view" id="view-devices">
+  <div class="ph">
+    <div><div class="ph-title">📡 Connected Devices</div><div class="ph-sub">All devices discovered on your network</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-green" onclick="exportCSV('devices')">⬇ Export CSV</button>
+      <button class="btn btn-blue" onclick="triggerScan()">🔍 Scan Now</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>IP Address</th><th>MAC Address</th><th>Hostname</th><th>Vendor</th><th>Status</th><th>First Seen</th><th>Last Seen</th></tr></thead>
+      <tbody id="full-devices"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════ TRAFFIC VIEW ══════════════════ -->
+<div class="view" id="view-traffic">
+  <div class="ph">
+    <div><div class="ph-title">📶 Traffic Summary</div><div class="ph-sub">Network traffic per device</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-green" onclick="exportCSV('traffic')">⬇ Export CSV</button>
+    </div>
+  </div>
+  <div class="card g1"><div class="card-body"><div style="height:200px"><canvas id="ch-traffic2"></canvas></div></div></div>
+  <div class="card">
+    <table>
+      <thead><tr><th>IP Address</th><th>Hostname</th><th>Bytes Sent</th><th>Bytes Received</th><th>Total Packets</th></tr></thead>
+      <tbody id="full-traffic"><tr><td colspan="5" class="empty">Run traffic_analyzer.py as Administrator to capture data</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════ DNS LOG VIEW ══════════════════ -->
+<div class="view" id="view-dns">
+  <div class="ph">
+    <div><div class="ph-title">🌐 DNS Query Log</div><div class="ph-sub">Live domain lookups captured from your network</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-green" onclick="exportCSV('dns')">⬇ Export CSV</button>
+      <button class="btn btn-ghost" onclick="dnsEntries=[];renderAllDNS()">🗑 Clear</button>
+    </div>
+  </div>
+  <div class="info-box">ℹ️ DNS monitoring requires <strong>traffic_analyzer.py</strong> running as Administrator. DNS queries from all devices on your hotspot are captured in real-time.</div>
+  <div class="card">
+    <div class="card-body" style="padding:8px">
+      <div class="dns-feed" style="height:400px" id="dns-feed-full"><div class="empty">Run modules/traffic_analyzer.py as Administrator to capture DNS queries</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ALERTS VIEW ══════════════════ -->
+<div class="view" id="view-alerts">
+  <div class="ph">
+    <div><div class="ph-title">🚨 Security Alerts</div><div class="ph-sub">All detected anomalies and threats</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-green" onclick="exportCSV('alerts')">⬇ Export CSV</button>
+      <button class="btn btn-ghost" onclick="loadFullAlerts()">↺ Refresh</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Time</th><th>Device IP</th><th>Alert Type</th><th>Message</th><th>Severity</th><th>Action</th></tr></thead>
+      <tbody id="full-alerts"><tr><td colspan="6" class="empty">Loading alerts…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════ URL CHECKER VIEW ══════════════════ -->
+<div class="view" id="view-urlchecker">
+  <div class="ph">
+    <div><div class="ph-title">🔗 URL Safety Checker</div><div class="ph-sub">Check any URL against Google Safe Browsing API</div></div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="url-bar">
+        <input class="url-inp" id="url-inp" placeholder="https://suspicious-site.com — press Enter to check" onkeydown="if(event.key==='Enter')checkURL()">
+        <button class="btn btn-blue" onclick="checkURL()">🔍 Check URL</button>
+      </div>
+      <div class="url-result" id="url-result"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div class="card-head"><div class="card-title">📖 <b>How it works</b></div></div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--sub);line-height:1.7">
+        SoftNet-Guard sends the URL to <strong style="color:var(--text)">Google Safe Browsing API v4</strong>, which checks it against Google's constantly updated lists of unsafe web resources including malware sites, phishing pages, and social engineering content.<br><br>
+        This is the same technology used by Google Chrome, Firefox, and Safari to protect billions of users worldwide.<br><br>
+        <strong style="color:var(--blue)">Test URL:</strong> <span class="mono" style="color:var(--yellow)">http://malware.testing.google.test/testing/malware/</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ML ENGINE VIEW ══════════════════ -->
+<div class="view" id="view-mlengine">
+  <div class="ph">
+    <div><div class="ph-title">🤖 ML Anomaly Detection Engine</div><div class="ph-sub">Isolation Forest model status and scores</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">⚙️ <b>Model Configuration</b></div></div>
+      <div class="card-body">
         <table>
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Device</th>
-                    <th>Type</th>
-                    <th>Message</th>
-                    <th>Severity</th>
-                </tr>
-            </thead>
-            <tbody id="alerts-tbody">
-                <tr><td colspan="5" style="text-align:center;color:#64748b">No alerts yet</td></tr>
-            </tbody>
+          <tr><td style="color:var(--sub);font-size:11px">Algorithm</td><td class="mono" style="color:var(--blue)">Isolation Forest</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Estimators</td><td class="mono">100 trees</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Contamination</td><td class="mono">5% (0.05)</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Training Data</td><td class="mono">5,000 normal samples</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Features</td><td class="mono">13 dimensions</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Scaler</td><td class="mono">MinMaxScaler</td></tr>
+          <tr><td style="color:var(--sub);font-size:11px">Model File</td><td class="mono" style="color:var(--green)">isolation_forest.pkl ✓</td></tr>
         </table>
+      </div>
     </div>
-
-    <!-- URL Checker -->
-    <div class="url-checker" id="url-checker">
-        <h2>🔗 URL Safety Checker</h2>
-        <div class="url-input-row">
-            <input type="text" id="url-input"
-                placeholder="Enter URL to check (e.g. http://example.com)"
-                onkeydown="if(event.key==='Enter') checkURL()">
-            <button class="btn btn-primary" onclick="checkURL()">Check URL</button>
+    <div class="card">
+      <div class="card-head"><div class="card-title">📊 <b>13 Feature Vector</b></div></div>
+      <div class="card-body">
+        <table>
+          <tr><th>#</th><th>Feature</th><th>Description</th></tr>
+          <tr><td class="mono" style="color:var(--blue)">1</td><td class="mono" style="font-size:10px">packet_count</td><td style="color:var(--sub);font-size:10px">Total packets in window</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">2</td><td class="mono" style="font-size:10px">bytes_sent</td><td style="color:var(--sub);font-size:10px">Upload bytes</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">3</td><td class="mono" style="font-size:10px">bytes_received</td><td style="color:var(--sub);font-size:10px">Download bytes</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">4</td><td class="mono" style="font-size:10px">bytes_total</td><td style="color:var(--sub);font-size:10px">Combined bandwidth</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">5</td><td class="mono" style="font-size:10px">bytes_per_packet</td><td style="color:var(--sub);font-size:10px">Avg packet size</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">6</td><td class="mono" style="font-size:10px">send_receive_ratio</td><td style="color:var(--sub);font-size:10px">Upload vs download balance</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">7</td><td class="mono" style="font-size:10px">protocol_diversity</td><td style="color:var(--sub);font-size:10px">Shannon entropy of protocols</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">8</td><td class="mono" style="font-size:10px">unique_destinations</td><td style="color:var(--sub);font-size:10px">Distinct IPs contacted</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">9</td><td class="mono" style="font-size:10px">dns_query_count</td><td style="color:var(--sub);font-size:10px">DNS lookups per window</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">10</td><td class="mono" style="font-size:10px">http_ratio</td><td style="color:var(--sub);font-size:10px">HTTP traffic fraction</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">11</td><td class="mono" style="font-size:10px">https_ratio</td><td style="color:var(--sub);font-size:10px">HTTPS traffic fraction</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">12</td><td class="mono" style="font-size:10px">dns_ratio</td><td style="color:var(--sub);font-size:10px">DNS traffic fraction</td></tr>
+          <tr><td class="mono" style="color:var(--blue)">13</td><td class="mono" style="font-size:10px">is_high_port</td><td style="color:var(--sub);font-size:10px">Non-standard port usage</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">📏 <b>Severity Thresholds</b></div></div>
+    <div class="card-body">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--sub);margin-bottom:4px;text-transform:uppercase">NORMAL</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--green)">< 0.55</div>
         </div>
-        <div class="url-result" id="url-result"></div>
+        <div style="flex:1;background:rgba(59,158,255,.06);border:1px solid rgba(59,158,255,.15);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--sub);margin-bottom:4px;text-transform:uppercase">LOW</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--blue)">0.55 – 0.65</div>
+        </div>
+        <div style="flex:1;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--sub);margin-bottom:4px;text-transform:uppercase">MEDIUM</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--purple)">0.65 – 0.75</div>
+        </div>
+        <div style="flex:1;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--sub);margin-bottom:4px;text-transform:uppercase">HIGH</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--yellow)">0.75 – 0.85</div>
+        </div>
+        <div style="flex:1;background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.15);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--sub);margin-bottom:4px;text-transform:uppercase">CRITICAL</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--red)">> 0.85</div>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
 
+</div><!-- end content -->
+</div><!-- end page -->
+
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3>📧 Email Alert Configuration</h3>
+    <p>Receive security alerts by email when threats are detected.</p>
+    <div class="field"><label>Gmail Address</label><input type="email" id="em-addr" placeholder="you@gmail.com"></div>
+    <div class="field"><label>Gmail App Password <span style="font-weight:300;text-transform:none;letter-spacing:0;font-size:9px">(not your login password)</span></label><input type="password" id="em-pass" placeholder="xxxx xxxx xxxx xxxx"></div>
+    <div class="field"><label>Alert Threshold</label><select id="em-thr"><option value="CRITICAL">CRITICAL only</option><option value="HIGH" selected>HIGH and above</option><option value="MEDIUM">MEDIUM and above</option><option value="LOW">All alerts</option></select></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-blue" onclick="saveEmail()">💾 Save & Test</button>
+    </div>
+  </div>
 </div>
 
 <script>
-function formatBytes(b) {
-    if (!b) return "0 B";
-    if (b > 1048576) return (b/1048576).toFixed(1) + " MB";
-    if (b > 1024)    return (b/1024).toFixed(1) + " KB";
-    return b + " B";
+// ── STATE ──
+const SEV_RANK = ['LOW','MEDIUM','HIGH','CRITICAL'];
+let emailCfg = JSON.parse(localStorage.getItem('sng_email') || 'null');
+let prevAlertCount = 0;
+let browserNotifsOn = false;
+let dnsEntries = [];
+let acknowledgedAlerts = new Set(JSON.parse(localStorage.getItem('sng_acked') || '[]'));
+let cachedDevices = [], cachedTraffic = [], cachedAlerts = [];
+
+// ── CHARTS ──
+const CO = { responsive:true, maintainAspectRatio:false, animation:{duration:500},
+  plugins:{ legend:{ labels:{ color:'#6a85a0', font:{size:10,family:'Inter'} } } } };
+const GR = { color:'rgba(28,40,64,0.8)' };
+const TK = { color:'#6a85a0', font:{size:10} };
+
+const chartTraffic = new Chart(document.getElementById('ch-traffic'), {
+  type:'bar', data:{ labels:[], datasets:[
+    {label:'Sent',     data:[], backgroundColor:'rgba(59,158,255,0.5)',  borderRadius:3},
+    {label:'Received', data:[], backgroundColor:'rgba(167,139,250,0.5)', borderRadius:3}
+  ]},
+  options:{...CO, scales:{x:{ticks:TK,grid:GR},y:{ticks:{...TK,callback:v=>fmtBytes(v)},grid:GR}}}
+});
+
+const chartDevice = new Chart(document.getElementById('ch-device'), {
+  type:'doughnut',
+  data:{ labels:['Active','Inactive'], datasets:[{data:[0,0], backgroundColor:['rgba(34,197,94,0.7)','rgba(244,63,94,0.5)'], borderWidth:0}] },
+  options:{...CO, cutout:'70%', plugins:{legend:{position:'bottom', labels:{color:'#6a85a0',font:{size:10}}}}}
+});
+
+const chartAlert = new Chart(document.getElementById('ch-alert'), {
+  type:'line', data:{ labels:[], datasets:[{ label:'Alerts', data:[], borderColor:'#f43f5e', backgroundColor:'rgba(244,63,94,0.08)', fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#f43f5e' }] },
+  options:{...CO, scales:{x:{ticks:TK,grid:GR},y:{ticks:TK,grid:GR,beginAtZero:true}}}
+});
+
+// Traffic chart in traffic view
+let chartTraffic2;
+function initTrafficChart2() {
+  if (chartTraffic2) return;
+  chartTraffic2 = new Chart(document.getElementById('ch-traffic2'), {
+    type:'bar', data:{ labels:[], datasets:[
+      {label:'Sent',     data:[], backgroundColor:'rgba(59,158,255,0.5)',  borderRadius:3},
+      {label:'Received', data:[], backgroundColor:'rgba(167,139,250,0.5)', borderRadius:3}
+    ]},
+    options:{...CO, scales:{x:{ticks:TK,grid:GR},y:{ticks:{...TK,callback:v=>fmtBytes(v)},grid:GR}}}
+  });
 }
 
-function severityBadge(s) {
-    const map = {
-        CRITICAL: "badge-critical",
-        HIGH:     "badge-high",
-        MEDIUM:   "badge-medium",
-        LOW:      "badge-low",
-        NORMAL:   "badge-normal"
-    };
-    return `<span class="badge ${map[s] || 'badge-low'}">${s}</span>`;
+// ── HELPERS ──
+function fmtBytes(b) {
+  if (!b) return '0';
+  if (b>1048576) return (b/1048576).toFixed(1)+' MB';
+  if (b>1024)    return (b/1024).toFixed(1)+' KB';
+  return b+' B';
 }
 
+function fmtTime(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts.replace('T',' ')).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+  catch { return '—'; }
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts.replace('T',' ')).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' '+fmtTime(ts); }
+  catch { return '—'; }
+}
+
+function chip(s, label) {
+  const map = { 'Active':'ch-active','Inactive':'ch-inactive','CRITICAL':'ch-critical','HIGH':'ch-high','MEDIUM':'ch-medium','LOW':'ch-low','NORMAL':'ch-normal','ANOMALY':'ch-anomaly','MALICIOUS_URL':'ch-mal','NEW_DEVICE':'ch-new' };
+  return `<span class="chip ${map[s]||'ch-low'}">${label||s}</span>`;
+}
+
+// ── NAVIGATION ──
+function goto(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.sb-link').forEach(l => {
+    if (l.getAttribute('onclick') === `goto('${view}')`) l.classList.add('active');
+  });
+  // Load view-specific data
+  if (view === 'devices')    loadFullDevices();
+  if (view === 'traffic')    { initTrafficChart2(); loadFullTraffic(); }
+  if (view === 'dns')        renderAllDNS();
+  if (view === 'alerts')     loadFullAlerts();
+}
+
+// ── DATA LOADING ──
 async function loadStats() {
-    const r = await fetch("/api/stats");
-    const d = await r.json();
-    document.getElementById("total-devices").textContent    = d.total_devices;
-    document.getElementById("active-devices").textContent   = d.active_devices;
-    document.getElementById("inactive-devices").textContent = d.inactive_devices;
+  try {
+    const d = await fetch('/api/stats').then(r => r.json());
+    document.getElementById('v-total').textContent  = d.total_devices  ?? '0';
+    document.getElementById('v-active').textContent = d.active_devices  ?? '0';
+    chartDevice.data.datasets[0].data = [d.active_devices||0, d.inactive_devices||0];
+    chartDevice.update();
+  } catch(e) { console.error('Stats:', e); }
 }
 
 async function loadDevices() {
-    const r = await fetch("/api/devices");
-    const devices = await r.json();
-    const tbody = document.getElementById("devices-tbody");
-    if (!devices.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b">No devices found</td></tr>';
-        return;
-    }
-    tbody.innerHTML = devices.map(d => `
-        <tr>
-            <td style="font-size:0.85rem">${d.ip_address || "-"}</td>
-            <td>${d.host_name || "Unknown"}</td>
-            <td style="font-size:0.8rem;color:#94a3b8">${d.vendor || "Unknown"}</td>
-            <td><span class="badge ${d.status==='Active'?'badge-active':'badge-inactive'}">${d.status}</span></td>
-        </tr>
-    `).join("");
+  try {
+    cachedDevices = await fetch('/api/devices').then(r => r.json());
+    const tb = document.getElementById('dash-devices');
+    if (!cachedDevices.length) { tb.innerHTML='<tr><td colspan="4" class="empty">No devices — try scanning</td></tr>'; return; }
+    tb.innerHTML = cachedDevices.map(d => `<tr>
+      <td class="mono" style="color:var(--teal)">${d.ip_address||'—'}</td>
+      <td>${d.host_name||'Unknown'}</td>
+      <td style="color:var(--sub);font-size:10px">${(d.vendor||'Unknown').substring(0,22)}</td>
+      <td>${chip(d.status)}</td></tr>`).join('');
+  } catch(e) { console.error('Devices:', e); }
+}
+
+async function loadFullDevices() {
+  try {
+    cachedDevices = await fetch('/api/devices').then(r => r.json());
+    const tb = document.getElementById('full-devices');
+    if (!cachedDevices.length) { tb.innerHTML='<tr><td colspan="8" class="empty">No devices found — click Scan Now</td></tr>'; return; }
+    tb.innerHTML = cachedDevices.map(d => `<tr>
+      <td class="mono" style="color:var(--sub)">${d.id||'—'}</td>
+      <td class="mono" style="color:var(--teal)">${d.ip_address||'—'}</td>
+      <td class="mono" style="font-size:10px;color:var(--sub)">${d.mac_address||'—'}</td>
+      <td>${d.host_name||'Unknown'}</td>
+      <td style="color:var(--sub);font-size:10px">${(d.vendor||'Unknown').substring(0,25)}</td>
+      <td>${chip(d.status)}</td>
+      <td class="mono" style="color:var(--sub);font-size:10px">${fmtDate(d.first_seen)}</td>
+      <td class="mono" style="color:var(--sub);font-size:10px">${fmtDate(d.last_seen)}</td>
+    </tr>`).join('');
+  } catch(e) { console.error('Full devices:', e); }
 }
 
 async function loadTraffic() {
-    const r = await fetch("/api/traffic");
-    const rows = await r.json();
-    const tbody = document.getElementById("traffic-tbody");
-    if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b">No traffic data yet</td></tr>';
-        return;
+  try {
+    cachedTraffic = await fetch('/api/traffic').then(r => r.json());
+    const tb = document.getElementById('dash-traffic');
+    let totalPkts = 0;
+    if (!cachedTraffic.length) {
+      tb.innerHTML = '<tr><td colspan="4" class="empty">Run traffic_analyzer.py as admin</td></tr>';
+      document.getElementById('v-packets').textContent = '0';
+    } else {
+      cachedTraffic.forEach(r => totalPkts += r.total_packets||0);
+      document.getElementById('v-packets').textContent = totalPkts > 9999 ? (totalPkts/1000).toFixed(1)+'K' : String(totalPkts);
+      tb.innerHTML = cachedTraffic.map(t => `<tr>
+        <td class="mono" style="color:var(--teal);font-size:10px">${t.ip_address||'—'}</td>
+        <td style="color:var(--blue)">${fmtBytes(t.total_sent)}</td>
+        <td style="color:var(--purple)">${fmtBytes(t.total_received)}</td>
+        <td class="mono" style="color:var(--sub)">${t.total_packets||0}</td></tr>`).join('');
+
+      const top = cachedTraffic.slice(0,5);
+      chartTraffic.data.labels = top.map(r => '…'+(r.ip_address||'?').split('.').pop());
+      chartTraffic.data.datasets[0].data = top.map(r => r.total_sent||0);
+      chartTraffic.data.datasets[1].data = top.map(r => r.total_received||0);
+      chartTraffic.update();
     }
-    tbody.innerHTML = rows.map(t => `
-        <tr>
-            <td style="font-size:0.85rem">${t.ip_address || "-"}</td>
-            <td>${formatBytes(t.total_sent)}</td>
-            <td>${formatBytes(t.total_received)}</td>
-            <td>${t.total_packets || 0}</td>
-        </tr>
-    `).join("");
+  } catch(e) { console.error('Traffic:', e); }
+}
+
+async function loadFullTraffic() {
+  try {
+    cachedTraffic = await fetch('/api/traffic').then(r => r.json());
+    const tb = document.getElementById('full-traffic');
+    if (!cachedTraffic.length) { tb.innerHTML='<tr><td colspan="5" class="empty">No traffic data — run modules/traffic_analyzer.py as Administrator</td></tr>'; return; }
+    tb.innerHTML = cachedTraffic.map(t => `<tr>
+      <td class="mono" style="color:var(--teal)">${t.ip_address||'—'}</td>
+      <td>${t.host_name||'Unknown'}</td>
+      <td style="color:var(--blue)">${fmtBytes(t.total_sent)}</td>
+      <td style="color:var(--purple)">${fmtBytes(t.total_received)}</td>
+      <td class="mono">${t.total_packets||0}</td></tr>`).join('');
+
+    if (chartTraffic2) {
+      const top = cachedTraffic.slice(0,8);
+      chartTraffic2.data.labels = top.map(r => '…'+(r.ip_address||'?').split('.').pop());
+      chartTraffic2.data.datasets[0].data = top.map(r => r.total_sent||0);
+      chartTraffic2.data.datasets[1].data = top.map(r => r.total_received||0);
+      chartTraffic2.update();
+    }
+  } catch(e) { console.error('Full traffic:', e); }
 }
 
 async function loadAlerts() {
-    const r = await fetch("/api/alerts");
-    const alerts = await r.json();
-    const tbody = document.getElementById("alerts-tbody");
-    document.getElementById("total-alerts").textContent = alerts.length;
-    if (!alerts.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b">No alerts yet — system is monitoring</td></tr>';
-        return;
+  try {
+    cachedAlerts = await fetch('/api/alerts').then(r => r.json());
+    document.getElementById('v-alerts').textContent = cachedAlerts.length;
+
+    // New alert detection
+    if (cachedAlerts.length > prevAlertCount && prevAlertCount >= 0 && cachedAlerts[0]) {
+      const a = cachedAlerts[0];
+      const isBad = ['CRITICAL','HIGH'].includes(a.severity) || a.alert_type === 'MALICIOUS_URL';
+      showToast(isBad?'t-danger':'t-warn', isBad?'🚨 Security Alert':'⚠️ Anomaly', (a.message||a.alert_type||'Threat').substring(0,80));
+      if (browserNotifsOn) new Notification('SoftNet-Guard', { body: a.message || 'Security alert' });
+      sendEmailAlert(a);
     }
-    tbody.innerHTML = alerts.map(a => `
-        <tr>
-            <td style="font-size:0.8rem;color:#64748b">${(a.occurred_at||"").substring(0,19)}</td>
-            <td style="font-size:0.85rem">${a.ip_address || "Unknown"}</td>
-            <td style="font-size:0.85rem">${a.alert_type || "-"}</td>
-            <td style="font-size:0.85rem">${a.message || "-"}</td>
-            <td>${severityBadge(a.severity)}</td>
-        </tr>
-    `).join("");
+    prevAlertCount = cachedAlerts.length;
+
+    // Bell
+    const badge = document.getElementById('bell-badge');
+    badge.style.display = cachedAlerts.length ? 'flex' : 'none';
+    badge.textContent = cachedAlerts.length > 99 ? '99+' : cachedAlerts.length;
+    document.getElementById('bell-ct').textContent = cachedAlerts.length + ' alerts';
+    document.getElementById('bell-list').innerHTML = cachedAlerts.length
+      ? cachedAlerts.slice(0,8).map(a => `<div class="bd-item"><span style="font-size:14px">${a.alert_type==='MALICIOUS_URL'?'☠️':a.severity==='CRITICAL'||a.severity==='HIGH'?'🔴':'🟡'}</span><div><div class="bd-t">${a.alert_type||'ALERT'} — ${a.ip_address||'?'}</div><div class="bd-s">${fmtTime(a.occurred_at)} · ${a.severity}</div></div></div>`).join('')
+      : '<div class="empty">No alerts</div>';
+
+    // Dashboard alerts table (recent 5)
+    const tb = document.getElementById('dash-alerts');
+    tb.innerHTML = cachedAlerts.length
+      ? cachedAlerts.slice(0,5).map(a => `<tr>
+          <td class="mono" style="color:var(--sub);font-size:10px">${fmtTime(a.occurred_at)}</td>
+          <td class="mono" style="font-size:10px">${a.ip_address||'Unknown'}</td>
+          <td style="font-size:10px">${a.alert_type||'—'}</td>
+          <td>${chip(a.severity)}</td></tr>`).join('')
+      : '<tr><td colspan="4" class="empty">System monitoring — no threats</td></tr>';
+
+    // Alert trend
+    const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    if (chartAlert.data.labels.length >= 12) { chartAlert.data.labels.shift(); chartAlert.data.datasets[0].data.shift(); }
+    chartAlert.data.labels.push(now);
+    chartAlert.data.datasets[0].data.push(cachedAlerts.length);
+    chartAlert.update();
+  } catch(e) { console.error('Alerts:', e); }
 }
 
-async function checkURL() {
-    const url = document.getElementById("url-input").value.trim();
-    if (!url) return;
-    const result = document.getElementById("url-result");
-    result.className = "url-result checking";
-    result.style.display = "block";
-    result.textContent = "⏳ Checking URL safety...";
-    try {
-        const r = await fetch("/api/check-url", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url })
-        });
-        const d = await r.json();
-        if (d.safe) {
-            result.className = "url-result safe";
-            result.textContent = "✅ URL appears SAFE — no threats detected.";
-        } else {
-            result.className = "url-result unsafe";
-            result.textContent = `🚨 UNSAFE — Threat: ${d.threat_type || "Malicious content detected"}`;
-        }
-    } catch(e) {
-        result.className = "url-result checking";
-        result.textContent = "⚠️ Check failed — is the server running?";
-    }
+async function loadFullAlerts() {
+  try {
+    cachedAlerts = await fetch('/api/alerts').then(r => r.json());
+    const tb = document.getElementById('full-alerts');
+    if (!cachedAlerts.length) { tb.innerHTML='<tr><td colspan="6" class="empty">No alerts yet — system is monitoring</td></tr>'; return; }
+    tb.innerHTML = cachedAlerts.map(a => {
+      const acked = acknowledgedAlerts.has(String(a.id));
+      return `<tr id="alert-row-${a.id}">
+        <td class="mono" style="color:var(--sub);font-size:10px">${fmtTime(a.occurred_at)}</td>
+        <td class="mono" style="font-size:10px">${a.ip_address||'Unknown'}</td>
+        <td style="font-size:10px">${a.alert_type||'—'}</td>
+        <td style="font-size:10px;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.message||'—'}</td>
+        <td>${chip(a.severity)}</td>
+        <td>${acked
+          ? '<span class="acked">✓ Acknowledged</span>'
+          : `<button class="ack-btn" onclick="acknowledgeAlert(${a.id}, this)">Acknowledge</button>`
+        }</td></tr>`;
+    }).join('');
+  } catch(e) { console.error('Full alerts:', e); }
 }
 
+// ── ACKNOWLEDGE ALERT ──
+function acknowledgeAlert(id, btn) {
+  acknowledgedAlerts.add(String(id));
+  localStorage.setItem('sng_acked', JSON.stringify([...acknowledgedAlerts]));
+  const cell = btn.parentElement;
+  cell.innerHTML = '<span class="acked">✓ Acknowledged</span>';
+  showToast('t-ok', '✓ Alert Acknowledged', 'Alert marked as reviewed');
+}
+
+// ── DNS FEED ──
+function addDNSEntry(ip, domain) {
+  const evil = ['malware','phishing','evil','trojan','hack','ransomware'].some(k => domain.includes(k));
+  const ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  dnsEntries.unshift({ ip, domain, ts, evil });
+  if (dnsEntries.length > 100) dnsEntries.pop();
+  renderDNSFeeds();
+}
+
+function renderDNSFeeds() {
+  const html = dnsEntries.slice(0,50).map(e => `
+    <div class="dns-row">
+      <span class="d-time">${e.ts}</span>
+      <span class="d-ip">${e.ip}</span>
+      <span class="d-dom ${e.evil?'evil':''}">${e.evil?'⚠ ':''}${e.domain}</span>
+    </div>`).join('');
+  const dash = document.getElementById('dns-feed-dash');
+  if (dash) dash.innerHTML = html || '<div class="empty">Run traffic_analyzer.py as Administrator</div>';
+}
+
+function renderAllDNS() {
+  const html = dnsEntries.slice(0,100).map(e => `
+    <div class="dns-row">
+      <span class="d-time">${e.ts}</span>
+      <span class="d-ip">${e.ip}</span>
+      <span class="d-dom ${e.evil?'evil':''}">${e.evil?'⚠ ':''}${e.domain}</span>
+    </div>`).join('');
+  const full = document.getElementById('dns-feed-full');
+  if (full) full.innerHTML = html || '<div class="empty">Run modules/traffic_analyzer.py as Administrator to capture DNS queries</div>';
+}
+
+// ── EXPORT CSV ──
+function exportCSV(type) {
+  let csv = '', filename = '';
+  if (type === 'devices') {
+    csv = 'ID,IP Address,MAC Address,Hostname,Vendor,Status,First Seen,Last Seen\n';
+    csv += cachedDevices.map(d => `${d.id||''},${d.ip_address||''},${d.mac_address||''},${d.host_name||''},${(d.vendor||'').replace(',',';')},${d.status||''},${d.first_seen||''},${d.last_seen||''}`).join('\n');
+    filename = 'softnetguard_devices.csv';
+  } else if (type === 'traffic') {
+    csv = 'IP Address,Hostname,Bytes Sent,Bytes Received,Total Packets\n';
+    csv += cachedTraffic.map(t => `${t.ip_address||''},${t.host_name||''},${t.total_sent||0},${t.total_received||0},${t.total_packets||0}`).join('\n');
+    filename = 'softnetguard_traffic.csv';
+  } else if (type === 'alerts') {
+    csv = 'ID,Time,Device IP,Alert Type,Message,Severity\n';
+    csv += cachedAlerts.map(a => `${a.id||''},"${a.occurred_at||''}",${a.ip_address||''},${a.alert_type||''},"${(a.message||'').replace('"','""')}",${a.severity||''}`).join('\n');
+    filename = 'softnetguard_alerts.csv';
+  } else if (type === 'dns') {
+    csv = 'Time,IP Address,Domain,Malicious\n';
+    csv += dnsEntries.map(d => `${d.ts},${d.ip},"${d.domain}",${d.evil?'YES':'NO'}`).join('\n');
+    filename = 'softnetguard_dns.csv';
+  }
+  if (!csv) { showToast('t-warn','No Data','Nothing to export yet'); return; }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  showToast('t-ok', '✅ Exported', filename);
+}
+
+// ── SCAN ──
 async function triggerScan() {
-    const btn = document.querySelector(".btn-primary");
-    btn.textContent = "⏳ Scanning...";
-    btn.disabled = true;
-    await fetch("/api/scan", { method: "POST" });
+  const btn = document.getElementById('scan-btn');
+  const txt = document.getElementById('scan-text');
+  txt.textContent = 'Scanning…';
+  btn.disabled = true;
+  try {
+    await fetch('/api/scan', { method:'POST' });
     await refresh();
-    btn.textContent = "🔍 Scan Network Now";
-    btn.disabled = false;
+    showToast('t-ok', '✅ Scan Complete', 'Network scan finished successfully');
+  } catch { showToast('t-warn', 'Scan Failed', 'Could not reach server'); }
+  txt.textContent = 'Scan Network';
+  btn.disabled = false;
 }
 
+// ── URL CHECKER ──
+async function checkURL() {
+  const url = document.getElementById('url-inp').value.trim();
+  if (!url) return;
+  const res = document.getElementById('url-result');
+  res.className = 'url-result ur-chk'; res.textContent = '⟳ Checking with Google Safe Browsing…';
+  try {
+    const d = await fetch('/api/check-url',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) }).then(r=>r.json());
+    if (d.safe) { res.className='url-result ur-ok'; res.textContent='✓ URL appears SAFE — no threats detected.'; }
+    else { res.className='url-result ur-bad'; res.textContent=`✗ UNSAFE — ${d.threat_type||'MALWARE'} detected. Do not visit!`; showToast('t-danger','🚨 Malicious URL',url.substring(0,50)); }
+  } catch { res.className='url-result ur-chk'; res.textContent='⚠ Request failed. Is Flask running?'; }
+}
+
+// ── REFRESH ──
 async function refresh() {
-    await Promise.all([loadStats(), loadDevices(), loadTraffic(), loadAlerts()]);
-    document.getElementById("last-updated").textContent =
-        "Last updated: " + new Date().toLocaleTimeString();
+  await Promise.all([ loadStats(), loadDevices(), loadTraffic(), loadAlerts() ]);
+  document.getElementById('nav-ts').textContent = new Date().toLocaleTimeString('en-IN');
 }
 
+// ── TOAST ──
+function showToast(type, title, msg) {
+  const icons = {'t-danger':'🚨','t-warn':'⚠️','t-ok':'✅','t-info':'ℹ️'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="t-ico">${icons[type]||'ℹ️'}</span><div class="t-body"><div class="t-title">${title}</div><div class="t-msg">${msg}</div></div><button class="t-close" onclick="this.closest('.toast').remove()">✕</button>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+// ── BROWSER NOTIFS ──
+function reqNotif() {
+  if (!('Notification' in window)) { showToast('t-warn','Not Supported','Browser notifications unavailable'); return; }
+  Notification.requestPermission().then(p => {
+    if (p==='granted') { browserNotifsOn=true; showToast('t-ok','✅ Enabled','You will receive threat alerts'); new Notification('SoftNet-Guard Active',{body:'Network monitoring is running'}); }
+    else showToast('t-warn','Denied','Enable notifications in browser settings');
+  });
+}
+
+// ── EMAIL ──
+function openModal() { if(emailCfg){document.getElementById('em-addr').value=emailCfg.email||'';document.getElementById('em-thr').value=emailCfg.threshold||'HIGH';} document.getElementById('modal-bg').classList.add('open'); }
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+function saveEmail() {
+  const email=document.getElementById('em-addr').value.trim(), password=document.getElementById('em-pass').value, threshold=document.getElementById('em-thr').value;
+  if(!email){showToast('t-warn','Missing','Enter email address');return;}
+  emailCfg={email,password,threshold}; localStorage.setItem('sng_email',JSON.stringify(emailCfg)); closeModal();
+  showToast('t-ok','✅ Saved',`Alerts → ${email}`);
+  fetch('/api/test-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}).then(r=>r.json()).then(d=>{ if(d.success)showToast('t-ok','✉️ Test Sent','Check your inbox'); else showToast('t-warn','Email Failed',d.error||'Check Gmail app password'); }).catch(()=>{});
+}
+async function sendEmailAlert(alert) {
+  if(!emailCfg?.email)return;
+  if(SEV_RANK.indexOf(alert.severity)<SEV_RANK.indexOf(emailCfg.threshold||'HIGH'))return;
+  fetch('/api/send-alert-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailCfg.email,password:emailCfg.password,alert})}).catch(()=>{});
+}
+
+// ── BELL ──
+function toggleBell() { document.getElementById('bell-drop').classList.toggle('open'); }
+document.addEventListener('click', e => { if(!e.target.closest('.bell-wrap')) document.getElementById('bell-drop').classList.remove('open'); });
+
+// ── INIT ──
 refresh();
 setInterval(refresh, 30000);
 </script>
